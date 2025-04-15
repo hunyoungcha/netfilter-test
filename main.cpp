@@ -4,7 +4,7 @@ volatile sig_atomic_t g_running = 1;
 
 void signalHandler(int signum) {
     if (signum == SIGINT) {
-        printf("\nCtrl+C");
+        printf("\nCtrl+C\n");
         g_running = 0;
     }
 }

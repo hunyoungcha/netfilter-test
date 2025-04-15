@@ -18,6 +18,7 @@ u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
 	int id = 0;
 	struct nfqnl_msg_packet_hdr *ph;
 	int ret;
+	std::string hostname ;
 
 	unsigned char *data;
 
@@ -38,33 +39,39 @@ u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
 	struct IpHdr* ip = (struct IpHdr *)data;
 	if (ip->Protocol == TCP) {
 		int ipLen = (ip->VersionAndIhl & 0x0F) * 4;
-		// std::cout << "Src IP : " << std::string(ip->SIp()) << std::endl;
-		// std::cout << "Dst IP : " << std::string(ip->DIp()) << std::endl;
 
 		struct TcpHdr* tcp = (struct TcpHdr *)(data + ipLen);
 		int tcpLen = (tcp->DataOffsetAndReserved >> 4) * 4;
 		
-		// std::cout << "Src Port" << tcp->SPort() << std::endl;
-		// std::cout << "Dst Port" << tcp->DPort() << std::endl;
-	
 		if (tcp->DPort() == HTTP) {
-			char* httpData = (char*) (data + ipLen + tcpLen);
 			int payloadLen = ntohs(ip->TotalLength) - ipLen - tcpLen;
+			std::string httpData((char*)(data + ipLen + tcpLen), payloadLen);
 
-			if (payloadLen > 0 ) {
-				std::cout << httpData << std::endl; 
-			}
+			FindString(httpData);
 
 		}
 		
 	}
 	
-
-	
-
-
 	return id;
 
+}
+std::string NetFilterConf::FindString(std::string httpData) {
+	std::string findString = "Host: ";
+	std::string hostname;
+
+	size_t pos = httpData.find(findString);
+	if (pos != std::string::npos) {
+		size_t posStart = pos + findString.length();
+		size_t posEnd = httpData.find("\r\n", posStart);
+
+		if (posEnd != std::string::npos) {
+			hostname = httpData.substr(posStart, posEnd - posStart);
+			std::cout << "Hostname: " << hostname << std::endl;
+		}
+	}
+
+	return hostname;
 }
 
 int NetFilterConf::cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {

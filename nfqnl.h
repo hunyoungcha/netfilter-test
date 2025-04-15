@@ -26,11 +26,14 @@ class NetFilterConf {
         void SetNetFilterEnding();
 
         void setHostName(char* arg);
-        static u_int32_t pkt_filter(struct nfq_data *tb);
-    private:
+    
+    
+        private:
         static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data);
-        
-        char* hostname_;
+        static std::string FindString(std::string httpData);
+        static u_int32_t pkt_filter(struct nfq_data *tb);
+    
+        std::string hostname_;
         struct nfq_handle *h_;
         struct nfq_q_handle *qh_;
         struct nfnl_handle *nh_;
