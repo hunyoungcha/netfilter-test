@@ -147,7 +147,7 @@ int NetFilterConf::RunNetFilter() {
 		return RUN_CONTINUE;
 	}
 	perror("recv failed");
-	RUN_BREAK;
+	return RUN_BREAK;
 }
 
 void NetFilterConf::SetNetFilterEnding() {
