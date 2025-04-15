@@ -24,13 +24,19 @@ int main(int argc, char *argv[]) {
     
     NetFilterConf NFConf_;
 
-    
-
     NFConf_.setHostName(argv[1]);
     NFConf_.SetNetFilterOpening();    
 
     while (g_running) {
-        NFConf_.RunNetFilter();
+        switch (NFConf_.RunNetFilter()) {
+            case RUN_CONTINUE:
+                continue;
+            case RUN_BREAK:
+                break;
+            default:
+                printf("Error");
+                break;
+        }
     }
 
     NFConf_.SetNetFilterEnding();

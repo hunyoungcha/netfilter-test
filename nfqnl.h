@@ -6,11 +6,15 @@
 #include <linux/netfilter.h>		/* for NF_ACCEPT */
 #include <errno.h>
 #include "packet_structs.h"
+#include <iostream>
 
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
 #define RUN_CONTINUE 1
 #define RUN_BREAK 2
+#define HTTP 80
+
+#define TCP 0x06
 
 class NetFilterConf {
     public:
@@ -22,7 +26,7 @@ class NetFilterConf {
         void SetNetFilterEnding();
 
         void setHostName(char* arg);
-        static u_int32_t print_pkt(struct nfq_data *tb);
+        static u_int32_t pkt_filter(struct nfq_data *tb);
     private:
         static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data);
         

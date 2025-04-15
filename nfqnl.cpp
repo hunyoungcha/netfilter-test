@@ -14,13 +14,10 @@ void NetFilterConf::setHostName(char* arg) {
 	hostname_ = arg;
 }
 
-
-u_int32_t NetFilterConf::print_pkt(struct nfq_data *tb) {
+u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
 	int id = 0;
 	struct nfqnl_msg_packet_hdr *ph;
-	struct nfqnl_msg_packet_hw *hwph;
 	int ret;
-	bool isIp;
 
 	unsigned char *data;
 
@@ -38,7 +35,32 @@ u_int32_t NetFilterConf::print_pkt(struct nfq_data *tb) {
 
 	}
 
-	struct IpHdr* IpHdr = (struct IpHdr *) data;
+	struct IpHdr* ip = (struct IpHdr *)data;
+	if (ip->Protocol == TCP) {
+		int ipLen = (ip->VersionAndIhl & 0x0F) * 4;
+		// std::cout << "Src IP : " << std::string(ip->SIp()) << std::endl;
+		// std::cout << "Dst IP : " << std::string(ip->DIp()) << std::endl;
+
+		struct TcpHdr* tcp = (struct TcpHdr *)(data + ipLen);
+		int tcpLen = (tcp->DataOffsetAndReserved >> 4) * 4;
+		
+		// std::cout << "Src Port" << tcp->SPort() << std::endl;
+		// std::cout << "Dst Port" << tcp->DPort() << std::endl;
+	
+		if (tcp->DPort() == HTTP) {
+			char* httpData = (char*) (data + ipLen + tcpLen);
+			int payloadLen = ntohs(ip->TotalLength) - ipLen - tcpLen;
+
+			if (payloadLen > 0 ) {
+				std::cout << httpData << std::endl; 
+			}
+
+		}
+		
+	}
+	
+
+	
 
 
 	return id;
@@ -46,8 +68,8 @@ u_int32_t NetFilterConf::print_pkt(struct nfq_data *tb) {
 }
 
 int NetFilterConf::cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {
-	u_int32_t id = NetFilterConf::print_pkt(nfa);
-	printf("entering callback\n");
+	u_int32_t id = NetFilterConf::pkt_filter(nfa);
+	// printf("entering callback\n");
 	return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
 }
 
@@ -93,17 +115,11 @@ void NetFilterConf::SetNetFilterOpening() {
 
 int NetFilterConf::RunNetFilter() {
 	if ((rv_ = recv(fd_, buf_, sizeof(buf_), 0)) >= 0) {
-		printf("pkt received\n");
+		// printf("pkt received\n");
 		nfq_handle_packet(h_, buf_, rv_);
 		return RUN_CONTINUE;
 	}
-	/* if your application is too slow to digest the packets that
-		* are sent from kernel-space, the socket buffer that we use
-		* to enqueue packets may fill up returning ENOBUFS. Depending
-		* on your application, this error may be ignored. nfq_nlmsg_verdict_putPlease, see
-		* the doxygen documentation of this library on how to improve
-		* this situation.
-		*/
+
 	if (rv_ < 0 && errno == ENOBUFS) {
 		printf("losing packets!\n");
 		return RUN_CONTINUE;

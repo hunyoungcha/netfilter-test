@@ -17,11 +17,14 @@ struct IpHdr {
 
     Ip SrcIp;
     Ip DstIp;
+
+    Ip SIp() { return ntohl(SrcIp); };
+    Ip DIp() { return ntohl(DstIp); };
 };
 
 struct TcpHdr {
-    uint16_t SourcePort;
-    uint16_t DestinationPort;
+    uint16_t SrcPort;
+    uint16_t DstPort;
 
     uint32_t SequenceNumber;
     uint32_t ACKNumber;
@@ -33,6 +36,9 @@ struct TcpHdr {
     
     uint16_t Checksum;
     uint16_t UrgentPointer;
+
+    uint16_t SPort() { return ntohs(SrcPort); };
+    uint16_t DPort() { return ntohs(DstPort); };
 };
 
 #pragma pack(pop)
