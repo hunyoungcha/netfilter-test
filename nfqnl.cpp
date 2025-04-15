@@ -1,5 +1,8 @@
 #include "nfqnl.h"
 
+size_t NetFilterConf::hostname_;
+
+
 NetFilterConf::NetFilterConf() {
     system("iptables -F");
     system("iptables -A OUTPUT -j NFQUEUE --queue-num 0");
@@ -10,15 +13,22 @@ NetFilterConf::~NetFilterConf() {
     system("iptables -F");
 }
 
-void NetFilterConf::setHostName(char* arg) {
-	hostname_ = arg;
+size_t NetFilterConf::Hashing(std::string &string) {
+	std::hash<std::string> hash_string;
+	size_t result = hash_string(string);
+	
+	return result;
 }
 
-u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
+void NetFilterConf::SetHostName(size_t HasedHostName) {
+	NetFilterConf::hostname_ = HasedHostName;
+}
+
+u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb, int& NF_FLAGS) {
 	int id = 0;
 	struct nfqnl_msg_packet_hdr *ph;
 	int ret;
-	std::string hostname ;
+	std::string FoundHostName ;
 
 	unsigned char *data;
 
@@ -33,7 +43,6 @@ u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
 	if (ret < 0) {
 		printf("Payload Len Error");
 		exit(-1);
-
 	}
 
 	struct IpHdr* ip = (struct IpHdr *)data;
@@ -47,16 +56,21 @@ u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb) {
 			int payloadLen = ntohs(ip->TotalLength) - ipLen - tcpLen;
 			std::string httpData((char*)(data + ipLen + tcpLen), payloadLen);
 
-			FindString(httpData);
-
+			FoundHostName = FindHost(httpData);
+			
 		}
-		
-	}
-	
-	return id;
 
+		if (!FoundHostName.empty()) {
+			if (NetFilterConf::Hashing(FoundHostName) == hostname_) {
+				NF_FLAGS = NF_DROP;
+			}
+			
+		}
+	}
+	return id;
 }
-std::string NetFilterConf::FindString(std::string httpData) {
+
+std::string NetFilterConf::FindHost(std::string httpData) {
 	std::string findString = "Host: ";
 	std::string hostname;
 
@@ -75,9 +89,10 @@ std::string NetFilterConf::FindString(std::string httpData) {
 }
 
 int NetFilterConf::cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data) {
-	u_int32_t id = NetFilterConf::pkt_filter(nfa);
-	// printf("entering callback\n");
-	return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+	int NF_FLAGS = NF_ACCEPT;
+
+	u_int32_t id = NetFilterConf::pkt_filter(nfa, NF_FLAGS);
+	return nfq_set_verdict(qh, id, NF_FLAGS, 0, NULL);
 }
 
 void NetFilterConf::SetNetFilterOpening() {

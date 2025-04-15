@@ -19,16 +19,20 @@ int main(int argc, char *argv[]) {
         usage();
         return 1;
     }
-    
+   
     signal(SIGINT, signalHandler);
-    
-    NetFilterConf NFConf_;
+     
+    NetFilterConf NFConf;
 
-    NFConf_.setHostName(argv[1]);
-    NFConf_.SetNetFilterOpening();    
+    std::string HostName = argv[1];
+    size_t HashedHostname = NetFilterConf::Hashing(HostName);
+    NetFilterConf::SetHostName(HashedHostname);
+
+    
+    NFConf.SetNetFilterOpening();    
 
     while (g_running) {
-        switch (NFConf_.RunNetFilter()) {
+        switch (NFConf.RunNetFilter()) {
             case RUN_CONTINUE:
                 continue;
             case RUN_BREAK:
@@ -39,7 +43,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    NFConf_.SetNetFilterEnding();
+    NFConf.SetNetFilterEnding();
 
     return 0;
 }
