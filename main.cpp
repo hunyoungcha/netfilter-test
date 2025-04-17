@@ -19,16 +19,13 @@ int main(int argc, char *argv[]) {
         usage();
         return 1;
     }
-   
     signal(SIGINT, signalHandler);
-     
     NetFilterConf NFConf;
 
     std::string HostName = argv[1];
     size_t HashedHostname = NetFilterConf::Hashing(HostName);
     NetFilterConf::SetHostName(HashedHostname);
 
-    
     NFConf.SetNetFilterOpening();    
 
     while (g_running) {

@@ -8,3 +8,4 @@
 #include "nfqnl.h"
 
 void signalHandler(int signum);
+void usage();

@@ -25,8 +25,8 @@ class NetFilterConf {
         int RunNetFilter();
         void SetNetFilterEnding();
         void SetHostName(char* arg);
-        static size_t Hashing(std::string &string);
 
+        static size_t Hashing(std::string &string);
         static void SetHostName(size_t HashedHostname);
         static size_t GetHostName();
 

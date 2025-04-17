@@ -25,7 +25,6 @@ void NetFilterConf::SetHostName(size_t HasedHostName) {
 }
 
 u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb, int& NF_FLAGS) {
-	int id = 0;
 	struct nfqnl_msg_packet_hdr *ph;
 	int ret;
 	std::string FoundHostName ;
@@ -37,7 +36,7 @@ u_int32_t NetFilterConf::pkt_filter(struct nfq_data *tb, int& NF_FLAGS) {
 		exit(1);		
 	}
 
-	id = ntohl(ph->packet_id);
+	u_int32_t id = ntohl(ph->packet_id);
 	ret = nfq_get_payload(tb, &data);
 
 	if (ret < 0) {
@@ -130,9 +129,6 @@ void NetFilterConf::SetNetFilterOpening() {
 	}
 
 	fd_ = nfq_fd(h_);
-
-	
-
 }
 
 int NetFilterConf::RunNetFilter() {
